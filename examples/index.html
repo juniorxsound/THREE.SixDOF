@@ -41,6 +41,7 @@
         integrity="sha256-Wua0LsQkGDEeIkbmBNjj9wcThJh5uCD6R8+5YQhXveQ=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"
         integrity="sha256-HJ7j+71YYw6Kcs8THwQV9lXmPOcR0eXlg7n8KRTZsyA=" crossorigin="anonymous"></script>
+    <script src="./lib/WebVR.js"></script>
     <script src="../dist/three-6dof.js"></script>
 
     <div id="info">
@@ -68,6 +69,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.vr.enabled = true;
         document.body.appendChild(renderer.domElement);
+        document.body.appendChild(THREE.WEBVR.createButton(renderer));
 
         var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
         var cameraDolly = new THREE.Object3D();
