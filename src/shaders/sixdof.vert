@@ -5,6 +5,7 @@ uniform sampler2D map;
 uniform sampler2D depthMap;
 uniform bool isSeperate;
 uniform float pointSize;
+uniform float displacement;
 
 void main() {
     vUv = uv;
@@ -13,7 +14,7 @@ void main() {
 
     // Transform the vert by the depth value (per vertex in the normals direction)
     vec3 vertPos = position;
-    vertPos += texture2D(depthMap, uv).r * vNormal;
+    vertPos += (texture2D(depthMap, uv).r * vNormal) * displacement;
 
     gl_Position = projectionMatrix *
                     modelViewMatrix *

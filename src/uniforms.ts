@@ -29,6 +29,10 @@ const Uniforms = {
     type: 'b',
     value: false,
   },
+  displacement: {
+    type: 'f',
+    value: 1.0,
+  },
 }
 
 export default Uniforms

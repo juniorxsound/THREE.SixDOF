@@ -56,16 +56,20 @@ class Viewer extends Object3D {
   ) {
     super()
 
-    if (!texturePath)
+    if (!texturePath) {
       throw new Error('Texture path must be defined when creating a viewer')
+    }
 
     this.geometry = new SphereBufferGeometry(10, meshDensity, meshDensity)
 
+    this.material.uniforms.displacement.value = displacement
+
     if (textureType === TextureType.SEPERATE) {
-      if (!depthPath)
+      if (!depthPath) {
         throw new Error(
           'When using seperate textures you must provide a depth texture as well',
         )
+      }
 
       // Inform the shader we are providing two seperate textures
       this.material.uniforms.isSeperate.value = true
@@ -94,6 +98,7 @@ class Viewer extends Object3D {
     this.add(this.obj)
   }
 
+  /** An internal util to create the scene Object3D */
   protected createSceneObjectWithStyle(style: Style): Object3D {
     switch (style) {
       case Style.WIRE:
@@ -105,6 +110,7 @@ class Viewer extends Object3D {
     }
   }
 
+  /** Promised wrapper for the TextureLoader */
   protected load(texturePath: string): Promise<string> {
     return new Promise((resolve, reject) => {
       this.loader.load(
@@ -114,6 +120,17 @@ class Viewer extends Object3D {
         () => reject(`Error loading texture error`),
       )
     })
+  }
+
+  /** Toggle vieweing texture or depthmap in viewer */
+  public toggleDepthDebug(state?: boolean): void {
+    this.material.uniforms.debugDepth.value =
+      state != undefined ? state : !this.material.uniforms.debugDepth.value
+  }
+
+  /** Setter for displacement amount */
+  public setDisplacement(amount: number): void {
+    this.material.uniforms.displacement.value = amount
   }
 }
 

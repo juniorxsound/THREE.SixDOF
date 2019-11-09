@@ -1,37 +1,41 @@
 import { Object3D, TextureLoader, ShaderMaterial, BackSide, SphereBufferGeometry, Mesh, Points } from 'three';
 
-var frag = "#define GLSLIFY 1\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform float debugDepth;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nvoid main() {\n    vec4 depthColorMixer = mix(texture2D(map, vUv), texture2D(depthMap, vUv), debugDepth);\n    gl_FragColor = depthColorMixer;\n}"; // eslint-disable-line
+var frag = "#define GLSLIFY 1\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform float debugDepth;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nvoid main() {\n\n    // Mix color and depth (used for debugging)\n    vec4 depthColorMixer = mix(texture2D(map, vUv), texture2D(depthMap, vUv), debugDepth);\n    \n    gl_FragColor = depthColorMixer;\n}"; // eslint-disable-line
 
-var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\n\nvoid main() {\n    vUv = uv;\n    vNormal = normalMatrix * normal;\n    gl_PointSize = pointSize;\n\n    // Transform the vert by the depth value (per vertex in the normals direction)\n    vec3 vertPos = position;\n    vertPos += texture2D(depthMap, uv).r * vNormal;\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(vertPos, 1.0);\n}"; // eslint-disable-line
+var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\nuniform float displacement;\n\nvoid main() {\n    vUv = uv;\n    vNormal = normalMatrix * normal;\n    gl_PointSize = pointSize;\n\n    // Transform the vert by the depth value (per vertex in the normals direction)\n    vec3 vertPos = position;\n    vertPos += (texture2D(depthMap, uv).r * vNormal) * displacement;\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(vertPos, 1.0);\n}"; // eslint-disable-line
 
 var Uniforms = {
-  'map': {
+  map: {
     type: 't',
     value: null
   },
-  'depthMap': {
+  depthMap: {
     type: 't',
     value: null
   },
-  'time': {
+  time: {
     type: 'f',
     value: 0.0
   },
-  'opacity': {
+  opacity: {
     type: 'f',
     value: 1.0
   },
-  'pointSize': {
+  pointSize: {
     type: 'f',
     value: 3.0
   },
-  'debugDepth': {
+  debugDepth: {
     type: 'f',
     value: 0.0
   },
-  'isSeperate': {
+  isSeperate: {
     type: 'b',
     value: false
+  },
+  displacement: {
+    type: 'f',
+    value: 1.0
   }
 };
 
@@ -68,6 +72,7 @@ class Viewer extends Object3D {
     var textureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : TextureType.SEPERATE;
     var meshDensity = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : MeshDensity.EXTRA_HIGH;
     var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Style.MESH;
+    var displacement = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
     super();
     _this = this;
     this.props = void 0;
@@ -81,11 +86,19 @@ class Viewer extends Object3D {
       transparent: true,
       side: BackSide
     });
-    if (!texturePath) throw new Error('Texture path must be defined when creating a viewer');
+
+    if (!texturePath) {
+      throw new Error('Texture path must be defined when creating a viewer');
+    }
+
     this.geometry = new SphereBufferGeometry(10, meshDensity, meshDensity);
+    this.material.uniforms.displacement.value = displacement;
 
     if (textureType === TextureType.SEPERATE) {
-      if (!depthPath) throw new Error('When using seperate textures you must provide a depth texture as well'); // Inform the shader we are providing two seperate textures
+      if (!depthPath) {
+        throw new Error('When using seperate textures you must provide a depth texture as well');
+      } // Inform the shader we are providing two seperate textures
+
 
       this.material.uniforms.isSeperate.value = true; // Load the depth map
 
@@ -106,6 +119,8 @@ class Viewer extends Object3D {
     this.obj = this.createSceneObjectWithStyle(style);
     this.add(this.obj);
   }
+  /** An internal util to create the scene Object3D */
+
 
   createSceneObjectWithStyle(style) {
     switch (style) {
@@ -119,6 +134,8 @@ class Viewer extends Object3D {
         return new Points(this.geometry, this.material);
     }
   }
+  /** Promised wrapper for the TextureLoader */
+
 
   load(texturePath) {
     var _this2 = this;
@@ -130,6 +147,18 @@ class Viewer extends Object3D {
         return reject("Error loading texture error");
       });
     });
+  }
+  /** Toggle vieweing texture or depthmap in viewer */
+
+
+  toggleDepthDebug(state) {
+    this.material.uniforms.debugDepth.value = state != undefined ? state : !this.material.uniforms.debugDepth.value;
+  }
+  /** Setter for displacement amount */
+
+
+  setDisplacement(amount) {
+    this.material.uniforms.displacement.value = amount;
   }
 
 }

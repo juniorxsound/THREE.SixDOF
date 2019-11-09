@@ -6,6 +6,9 @@ varying vec2 vUv;
 varying vec3 vNormal;
 
 void main() {
+
+    // Mix color and depth (used for debugging)
     vec4 depthColorMixer = mix(texture2D(map, vUv), texture2D(depthMap, vUv), debugDepth);
+    
     gl_FragColor = depthColorMixer;
 }
