@@ -63,8 +63,6 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
 
     class Viewer extends three.Object3D {
       constructor() {
-        var _this;
-
         var texturePath = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
         var depthPath = arguments.length > 1 ? arguments[1] : undefined;
         var textureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : exports.TextureType.TOP_BOTTOM;
@@ -72,7 +70,6 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
         var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : exports.Style.MESH;
         var displacement = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
         super();
-        _this = this;
         this.props = void 0;
         this.loader = new three.TextureLoader();
         this.obj = void 0;
@@ -89,20 +86,34 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
           throw new Error('Texture path must be defined when creating a viewer');
         }
 
-        this.geometry = new three.SphereBufferGeometry(10, meshDensity, meshDensity);
-        this.material.uniforms.displacement.value = displacement;
+        this.geometry = this.createSphere(10, meshDensity);
+        this.setTextures(texturePath, depthPath, textureType);
+        this.setDisplacement(displacement);
+        /** Create the Mesh/Points and add it to the viewer object */
+
+        this.obj = this.createSceneObjectWithStyle(style);
+        this.add(this.obj);
+      }
+
+      createSphere(radius, meshDensity) {
+        return new three.SphereBufferGeometry(radius, meshDensity, meshDensity);
+      }
+      /** Internal utility to load texture and set the shader uniforms */
+
+
+      setTextures(texturePath, depthPath, textureType) {
+        var _this = this;
 
         if (textureType === exports.TextureType.SEPERATE) {
           if (!depthPath) {
             throw new Error('When using seperate textures you must provide a depth texture as well');
           }
-          /** Inform the shader we are providing two seperate textures */
-
-
-          this.material.uniforms.isSeperate.value = true;
           /** Load the depthmap */
 
+
           this.load(depthPath).then(function (texture) {
+            /** Inform the shader we are providing two seperate textures and set the texture */
+            _this.material.uniforms.isSeperate.value = true;
             _this.material.uniforms.depthMap.value = texture;
           })["catch"](function (err) {
             throw new Error(err);
@@ -118,10 +129,6 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
         })["catch"](function (err) {
           throw new Error(err);
         });
-        /** Create the Mesh/Points and add it to the viewer object */
-
-        this.obj = this.createSceneObjectWithStyle(style);
-        this.add(this.obj);
       }
       /** An internal util to create the scene Object3D */
 

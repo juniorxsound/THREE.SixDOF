@@ -44,10 +44,21 @@ export default class Viewer extends Object3D {
             throw new Error('Texture path must be defined when creating a viewer')
         }
 
-        this.geometry = new SphereBufferGeometry(10, meshDensity, meshDensity)
+        this.geometry = this.createSphere(10, meshDensity)
+        this.setTextures(texturePath, depthPath, textureType)
+        this.setDisplacement(displacement)
 
-        this.material.uniforms.displacement.value = displacement
+        /** Create the Mesh/Points and add it to the viewer object */
+        this.obj = this.createSceneObjectWithStyle(style)
+        this.add(this.obj)
+    }
 
+    protected createSphere(radius: number, meshDensity: MeshDensity): SphereBufferGeometry {
+        return new SphereBufferGeometry(radius, meshDensity, meshDensity)
+    }
+
+    /** Internal utility to load texture and set the shader uniforms */
+    protected setTextures(texturePath: string, depthPath: string, textureType: TextureType): void {
         if (textureType === TextureType.SEPERATE) {
             if (!depthPath) {
                 throw new Error(
@@ -55,12 +66,11 @@ export default class Viewer extends Object3D {
                 )
             }
 
-            /** Inform the shader we are providing two seperate textures */
-            this.material.uniforms.isSeperate.value = true
-
             /** Load the depthmap */
             this.load(depthPath)
                 .then(texture => {
+                    /** Inform the shader we are providing two seperate textures and set the texture */
+                    this.material.uniforms.isSeperate.value = true
                     this.material.uniforms.depthMap.value = texture
                 })
                 .catch(err => {
@@ -78,10 +88,6 @@ export default class Viewer extends Object3D {
             .catch(err => {
                 throw new Error(err)
             })
-
-        /** Create the Mesh/Points and add it to the viewer object */
-        this.obj = this.createSceneObjectWithStyle(style)
-        this.add(this.obj)
     }
 
     /** An internal util to create the scene Object3D */
