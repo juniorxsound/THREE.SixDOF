@@ -23,7 +23,7 @@
     "url": "git+https://github.com/UmbraSoftware/umbrajs-three"
   },
   "peerDependencies": {
-    "three": "0.110.0"
+    "three": "^0.110.0"
   },
   "devDependencies": {
     "@babel/core": "7.5.5",
@@ -51,6 +51,7 @@
     "rollup-plugin-node-resolve": "5.2.0",
     "rollup-plugin-terser": "5.0.0",
     "terser": "4.0.0",
-    "typescript": "3.5.3"
+    "three": "^0.110.0",
+    "typescript": "^3.6.0"
   }
 }

@@ -1,5 +1,5 @@
 export enum Style {
-    WIRE,
-    POINTS,
-    MESH,
+  WIRE,
+  POINTS,
+  MESH,
 }

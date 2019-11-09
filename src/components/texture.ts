@@ -1,4 +1,4 @@
 export enum TextureType {
-    TOP_BOTTOM,
-    SEPERATE,
+  TOP_BOTTOM,
+  SEPERATE,
 }
