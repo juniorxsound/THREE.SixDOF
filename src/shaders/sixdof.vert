@@ -23,7 +23,7 @@ void main() {
     } else {
         depth = texture2D(map, depthUvs);
     }
-    vertPos += (depth.r * vNormal) * displacement;
+    vertPos += 1.0 - ((depth.r * vNormal) * displacement);
 
     gl_Position = projectionMatrix *
                     modelViewMatrix *

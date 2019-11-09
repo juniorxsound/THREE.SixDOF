@@ -1,9 +1,9 @@
 <html>
 
 <head>
-    <title>6DOF Styles Example</title>
+    <title>6DOF Viewer Example</title>
     <meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
         body {
             background: #000;
@@ -46,13 +46,22 @@
     <div id="info">
         <span id="info_wrapper">
             <a href="https://github.com/juniorxsound/THREE.SixDOF" target="_blank" rel="noopener">THREE.SixDOF</a> -
-            Rendering styles example<br /> Written
+            Viewer Example<br /> Written
             by <a href="https://orfleisher.com">juniorxsound</a> and <a
                 href="https://github.com/mellinger">mellinger</a>
         </span>
     </div>
     <script>
         'use strict';
+        /** Debug GUI Props **/
+        var guiParams = {
+            style: SixDOF.Style.MESH,
+            displacement: 1.0,
+            debugDepth: false,
+            toggleView: () => { },
+            autoRotate: true
+        };
+
         var scene = new THREE.Scene();
 
         var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -61,6 +70,9 @@
         document.body.appendChild(renderer.domElement);
 
         var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
+        var cameraDolly = new THREE.Object3D();
+        cameraDolly.add(camera);
+        scene.add(cameraDolly);
 
         var viewer = new SixDOF.Viewer(
             '../assets/eqr-top-bottom.jpg',
@@ -73,7 +85,7 @@
         scene.add(viewer);
 
         renderer.setAnimationLoop(() => {
-            viewer.rotation.y += 0.001;
+            if (guiParams.autoRotate) viewer.rotation.y += 0.001;
             renderer.render(scene, camera);
         });
 
@@ -83,14 +95,9 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        /**
-         * Debug GUI
-         **/
-        var guiParams = {
-            style: SixDOF.Style.MESH
-        };
-
         var gui = new dat.GUI();
+
+        /** Rendering style **/
         gui
             .add(guiParams, 'style', {
                 Mesh: SixDOF.Style.MESH,
@@ -100,7 +107,39 @@
             .name('Style')
             .onChange(val => {
                 viewer.setStyleFromString(SixDOF.Style[val]);
-            })
+            });
+        /** Displacement amount **/
+        gui
+            .add(guiParams, 'displacement', 0.0, 10.0)
+            .name('Displacement')
+            .onChange(val => {
+                viewer.setDisplacement(val);
+            });
+
+        /** Show depth map in viewer **/
+        gui
+            .add(guiParams, 'debugDepth')
+            .name('Debug Depth')
+            .onChange(val => {
+                viewer.toggleDepthDebug(val);
+            });
+
+        /** Spin viewer **/
+        gui
+            .add(guiParams, 'autoRotate')
+            .name('Auto Rotate');
+
+        /** Move camera between FPS and outside view **/
+        gui
+            .add(guiParams, 'toggleView')
+            .name('Toggle View')
+            .onChange(() => {
+                if (cameraDolly.position.z === 0) {
+                    cameraDolly.position.set(0, 0, 20);
+                } else {
+                    cameraDolly.position.set(0, 0, 0);
+                }
+            });
     </script>
 </body>
 
