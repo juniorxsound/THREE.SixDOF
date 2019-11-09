@@ -22,11 +22,13 @@
 
         var renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.vr.enabled = true;
         document.body.appendChild(renderer.domElement);
 
         var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
 
-        var viewer = new SixDOF.Viewer('../assets/eqr-rgb.jpg', '../assets/eqr-depth.jpg');
+        var viewer = new SixDOF.Viewer('../assets/eqr-top-bottom.jpg');
+        viewer.setDisplacement(2.5);
         scene.add(viewer);
 
         renderer.setAnimationLoop(() => {

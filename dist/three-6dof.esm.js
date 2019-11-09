@@ -4,9 +4,9 @@ import { Object3D, TextureLoader, ShaderMaterial, BackSide, SphereBufferGeometry
  * A small wrapper for THREE imports so rollup tree-shakes only the parts we need better
  */
 
-var frag = "#define GLSLIFY 1\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform float debugDepth;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nvoid main() {\n\n    // Mix color and depth (used for debugging)\n    vec4 depthColorMixer = mix(texture2D(map, vUv), texture2D(depthMap, vUv), debugDepth);\n    \n    gl_FragColor = depthColorMixer;\n}"; // eslint-disable-line
+var frag = "#define GLSLIFY 1\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform float debugDepth;\nuniform bool isSeperate;\nuniform float opacity;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nvoid main() {\n\n    // If it's a single texture crop the uvs used to read the textures\n    vec2 depthUvs = isSeperate ? vUv : vec2(vUv.x, vUv.y * 0.5);\n    vec2 colorUvs = isSeperate ? vUv : vec2(vUv.x, (vUv.y * 0.5) + 0.5);\n\n    vec3 depth;\n\n    // @TODO This is a pretty expansive op perhaps split it into two shaders and pick one when compiling the WebGL program\n    if (isSeperate) {\n        depth = texture2D(depthMap, depthUvs).rgb;\n    } else {\n        depth = texture2D(map, depthUvs).rgb;\n    }\n    vec3 color = texture2D(map, colorUvs).rgb;\n\n    // Mix the depth and color based on debugDepth value\n    vec3 depthColorMixer = mix(color, depth , debugDepth);\n\n    // Render dat fragment\n    gl_FragColor = vec4(depthColorMixer, opacity);\n}"; // eslint-disable-line
 
-var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\nuniform float displacement;\n\nvoid main() {\n    vUv = uv;\n    vNormal = normalMatrix * normal;\n    gl_PointSize = pointSize;\n\n    // Transform the vert by the depth value (per vertex in the normals direction)\n    vec3 vertPos = position;\n    vertPos += (texture2D(depthMap, uv).r * vNormal) * displacement;\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(vertPos, 1.0);\n}"; // eslint-disable-line
+var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\nuniform float displacement;\n\nvoid main() {\n    vUv = uv;\n    vNormal = normalMatrix * normal;\n    gl_PointSize = pointSize;\n\n    // Transform the vert by the depth value (per vertex in the normals direction)\n    vec3 vertPos = position;\n    vec2 depthUvs = isSeperate ? uv : vec2(uv.x, uv.y * 0.5);\n    vec4 depth;\n\n    // @TODO This is a pretty expansive op perhaps split it into two shaders and pick one when compiling the WebGL program\n    if (isSeperate) {\n        depth = texture2D(depthMap, depthUvs);\n    } else {\n        depth = texture2D(map, depthUvs);\n    }\n    vertPos += (depth.r * vNormal) * displacement;\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(vertPos, 1.0);\n}"; // eslint-disable-line
 
 var Uniforms = {
   map: {
@@ -73,9 +73,9 @@ class Viewer extends Object3D {
 
     var texturePath = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
     var depthPath = arguments.length > 1 ? arguments[1] : undefined;
-    var textureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : TextureType.SEPERATE;
+    var textureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : TextureType.TOP_BOTTOM;
     var meshDensity = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : MeshDensity.HIGH;
-    var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Style.POINTS;
+    var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Style.MESH;
     var displacement = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
     super();
     _this = this;
@@ -113,6 +113,8 @@ class Viewer extends Object3D {
       })["catch"](function (err) {
         throw new Error(err);
       });
+    } else {
+      this.material.uniforms.isSeperate.value = false;
     }
     /** Load the texture */
 
@@ -121,7 +123,8 @@ class Viewer extends Object3D {
       _this.material.uniforms.map.value = texture;
     })["catch"](function (err) {
       throw new Error(err);
-    }); // Create the Mesh/Points and add it to the viewer object
+    });
+    /** Create the Mesh/Points and add it to the viewer object */
 
     this.obj = this.createSceneObjectWithStyle(style);
     this.add(this.obj);

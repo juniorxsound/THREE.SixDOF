@@ -33,9 +33,9 @@ export default class Viewer extends Object3D {
     constructor(
         texturePath: string = undefined,
         depthPath?: string,
-        textureType: TextureType = TextureType.SEPERATE,
+        textureType: TextureType = TextureType.TOP_BOTTOM,
         meshDensity: MeshDensity = MeshDensity.HIGH,
-        style: Style = Style.POINTS,
+        style: Style = Style.MESH,
         displacement: number = 1,
     ) {
         super()
@@ -66,6 +66,8 @@ export default class Viewer extends Object3D {
                 .catch(err => {
                     throw new Error(err)
                 })
+        } else {
+            this.material.uniforms.isSeperate.value = false
         }
 
         /** Load the texture */
@@ -77,7 +79,7 @@ export default class Viewer extends Object3D {
                 throw new Error(err)
             })
 
-        // Create the Mesh/Points and add it to the viewer object
+        /** Create the Mesh/Points and add it to the viewer object */
         this.obj = this.createSceneObjectWithStyle(style)
         this.add(this.obj)
     }
