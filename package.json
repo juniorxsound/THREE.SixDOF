@@ -13,6 +13,7 @@
     "build:types": "tsc --declaration --emitDeclarationOnly",
     "build": "yarn build:types && yarn build:js",
     "build:watch": "rollup -c --watch",
+    "postinstall": "yarn build",
     "examples": "http-server ./"
   },
   "author": "",
