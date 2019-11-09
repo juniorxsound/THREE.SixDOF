@@ -1,12 +1,31 @@
 <html>
 
 <head>
-    <title>6DOF Viewer</title>
+    <title>6DOF Simple Example</title>
     <style>
         body {
+            background: #000;
+            color: #fff;
             padding: 0;
-            margin: auto;
+            margin: 0;
             overflow: hidden;
+            font-family: georgia;
+            text-align: center;
+        }
+
+        a {
+            color: skyblue;
+            text-decoration: none
+        }
+
+        #info {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+        }
+
+        #info_wrapper {
+            background: rgba(0, 0, 0, 0.7);
         }
     </style>
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -20,6 +39,14 @@
         integrity="sha256-Wua0LsQkGDEeIkbmBNjj9wcThJh5uCD6R8+5YQhXveQ=" crossorigin="anonymous"></script>
     <script src="../dist/three-6dof.js"></script>
 
+    <div id="info">
+        <span id="info_wrapper">
+            <a href="https://github.com/juniorxsound/THREE.SixDOF" target="_blank" rel="noopener">THREE.SixDOF</a> -
+            Simple example using Three.js<br /> Written
+            by <a href="https://orfleisher.com">juniorxsound</a> and <a
+                href="https://github.com/mellinger">mellinger</a>
+        </span>
+    </div>
     <script>
         'use strict';
         var scene = new THREE.Scene();
@@ -44,6 +71,12 @@
         renderer.setAnimationLoop(() => {
             viewer.rotation.y += 0.001;
             renderer.render(scene, camera);
+        });
+
+        window.addEventListener('resize', ev => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>

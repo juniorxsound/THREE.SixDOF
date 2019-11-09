@@ -1,0 +1,105 @@
+<html>
+
+<head>
+    <title>6DOF Styles Example</title>
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            font-family: georgia;
+            text-align: center;
+        }
+
+        a {
+            color: skyblue;
+            text-decoration: none
+        }
+
+        #info {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+        }
+
+        #info_wrapper {
+            background: rgba(0, 0, 0, 0.7);
+        }
+    </style>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/109/three.min.js"
+        integrity="sha256-Wua0LsQkGDEeIkbmBNjj9wcThJh5uCD6R8+5YQhXveQ=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"
+        integrity="sha256-HJ7j+71YYw6Kcs8THwQV9lXmPOcR0eXlg7n8KRTZsyA=" crossorigin="anonymous"></script>
+    <script src="../dist/three-6dof.js"></script>
+
+    <div id="info">
+        <span id="info_wrapper">
+            <a href="https://github.com/juniorxsound/THREE.SixDOF" target="_blank" rel="noopener">THREE.SixDOF</a> -
+            Rendering styles example<br /> Written
+            by <a href="https://orfleisher.com">juniorxsound</a> and <a
+                href="https://github.com/mellinger">mellinger</a>
+        </span>
+    </div>
+    <script>
+        'use strict';
+        var scene = new THREE.Scene();
+
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.vr.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
+
+        var viewer = new SixDOF.Viewer(
+            '../assets/eqr-top-bottom.jpg',
+            null, // This is the depthmap if provided seperately (make sure to TextureType.SEPERATE)
+            SixDOF.TextureType.TOP_BOTTOM,
+            SixDOF.MeshDensity.HIGH,
+            SixDOF.Style.MESH,
+            1.0 // Displacement amount
+        );
+        scene.add(viewer);
+
+        renderer.setAnimationLoop(() => {
+            viewer.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        });
+
+        window.addEventListener('resize', ev => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        /**
+         * Debug GUI
+         **/
+        var guiParams = {
+            style: SixDOF.Style.MESH
+        };
+
+        var gui = new dat.GUI();
+        gui
+            .add(guiParams, 'style', {
+                Mesh: SixDOF.Style.MESH,
+                Wireframe: SixDOF.Style.WIRE,
+                Pointcloud: SixDOF.Style.POINTS
+            })
+            .name('Style')
+            .onChange(val => {
+                viewer.setStyleFromString(SixDOF.Style[val]);
+            })
+    </script>
+</body>
+
+</html>

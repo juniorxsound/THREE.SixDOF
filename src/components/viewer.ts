@@ -46,7 +46,7 @@ export default class Viewer extends Object3D {
       throw new Error('Texture path must be defined when creating a viewer')
     }
 
-    this.geometry = this.createSphere(10, meshDensity)
+    this.createSphere(10, meshDensity)
     this.setTextures(texturePath, depthPath, textureType)
     this.setDisplacement(displacement)
 
@@ -55,15 +55,12 @@ export default class Viewer extends Object3D {
     super.add(this.obj)
   }
 
-  protected createSphere(
-    radius: number,
-    meshDensity: MeshDensity,
-  ): SphereBufferGeometry {
-    return new SphereBufferGeometry(radius, meshDensity, meshDensity)
+  private createSphere(radius: number, meshDensity: MeshDensity): void {
+    this.geometry = new SphereBufferGeometry(radius, meshDensity, meshDensity)
   }
 
   /** Internal utility to load texture and set the shader uniforms */
-  protected setTextures(
+  private setTextures(
     texturePath: string,
     depthPath: string,
     textureType: TextureType,
@@ -123,6 +120,10 @@ export default class Viewer extends Object3D {
     })
   }
 
+  protected resetStyle(): void {
+    this.material.wireframe = false
+  }
+
   /** Toggle vieweing texture or depthmap in viewer */
   public toggleDepthDebug(state?: boolean): void {
     this.material.uniforms.debugDepth.value =
@@ -132,5 +133,19 @@ export default class Viewer extends Object3D {
   /** Setter for displacement amount */
   public setDisplacement(amount: number): void {
     this.material.uniforms.displacement.value = amount
+  }
+
+  public setStyle(style: Style): void {
+    super.remove(this.obj)
+    this.resetStyle()
+    this.obj = this.createSceneObjectWithStyle(style)
+    super.add(this.obj)
+  }
+
+  public setStyleFromString(style: string): void {
+    super.remove(this.obj)
+    this.resetStyle()
+    this.obj = this.createSceneObjectWithStyle(Style[style])
+    super.add(this.obj)
   }
 }
