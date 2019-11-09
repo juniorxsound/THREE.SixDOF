@@ -43,13 +43,11 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
       }
     };
 
-    var Style;
-
     (function (Style) {
       Style[Style["WIRE"] = 0] = "WIRE";
       Style[Style["POINTS"] = 1] = "POINTS";
       Style[Style["MESH"] = 2] = "MESH";
-    })(Style || (Style = {}));
+    })(exports.Style || (exports.Style = {}));
 
     (function (MeshDensity) {
       MeshDensity[MeshDensity["LOW"] = 64] = "LOW";
@@ -71,7 +69,7 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
         var depthPath = arguments.length > 1 ? arguments[1] : undefined;
         var textureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : exports.TextureType.TOP_BOTTOM;
         var meshDensity = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : exports.MeshDensity.HIGH;
-        var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Style.MESH;
+        var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : exports.Style.MESH;
         var displacement = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
         super();
         _this = this;
@@ -130,13 +128,13 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
 
       createSceneObjectWithStyle(style) {
         switch (style) {
-          case Style.WIRE:
+          case exports.Style.WIRE:
             this.material.wireframe = true;
 
-          case Style.MESH:
+          case exports.Style.MESH:
             return new three.Mesh(this.geometry, this.material);
 
-          case Style.POINTS:
+          case exports.Style.POINTS:
             return new three.Points(this.geometry, this.material);
         }
       }

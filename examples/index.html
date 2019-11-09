@@ -27,7 +27,14 @@
 
         var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
 
-        var viewer = new SixDOF.Viewer('../assets/eqr-top-bottom.jpg');
+        var viewer = new SixDOF.Viewer(
+            '../assets/eqr-top-bottom.jpg',
+            null, // This is the depthmap if provided seperately (make sure to TextureType.SEPERATE)
+            SixDOF.TextureType.TOP_BOTTOM,
+            SixDOF.MeshDensity.HIGH,
+            SixDOF.Style.MESH,
+            1.0
+        );
         viewer.setDisplacement(2.5);
         scene.add(viewer);
 

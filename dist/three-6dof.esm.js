@@ -173,5 +173,5 @@ class Viewer extends Object3D {
 
 }
 
-export { MeshDensity, TextureType, Viewer };
+export { MeshDensity, Style, TextureType, Viewer };
 //# sourceMappingURL=three-6dof.esm.js.map
