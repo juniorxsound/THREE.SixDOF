@@ -1,5 +1,9 @@
 import { Object3D, TextureLoader, ShaderMaterial, BackSide, SphereBufferGeometry, Mesh, Points } from 'three';
 
+/**
+ * A small wrapper for THREE imports so rollup tree-shakes only the parts we need better
+ */
+
 var frag = "#define GLSLIFY 1\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform float debugDepth;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nvoid main() {\n\n    // Mix color and depth (used for debugging)\n    vec4 depthColorMixer = mix(texture2D(map, vUv), texture2D(depthMap, vUv), debugDepth);\n    \n    gl_FragColor = depthColorMixer;\n}"; // eslint-disable-line
 
 var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\nuniform float displacement;\n\nvoid main() {\n    vUv = uv;\n    vNormal = normalMatrix * normal;\n    gl_PointSize = pointSize;\n\n    // Transform the vert by the depth value (per vertex in the normals direction)\n    vec3 vertPos = position;\n    vertPos += (texture2D(depthMap, uv).r * vNormal) * displacement;\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(vertPos, 1.0);\n}"; // eslint-disable-line
@@ -39,12 +43,13 @@ var Uniforms = {
   }
 };
 
-var TextureType;
+var Style;
 
-(function (TextureType) {
-  TextureType[TextureType["TOP_BOTTOM"] = 0] = "TOP_BOTTOM";
-  TextureType[TextureType["SEPERATE"] = 1] = "SEPERATE";
-})(TextureType || (TextureType = {}));
+(function (Style) {
+  Style[Style["WIRE"] = 0] = "WIRE";
+  Style[Style["POINTS"] = 1] = "POINTS";
+  Style[Style["MESH"] = 2] = "MESH";
+})(Style || (Style = {}));
 
 var MeshDensity;
 
@@ -55,13 +60,12 @@ var MeshDensity;
   MeshDensity[MeshDensity["EXTRA_HIGH"] = 512] = "EXTRA_HIGH";
 })(MeshDensity || (MeshDensity = {}));
 
-var Style;
+var TextureType;
 
-(function (Style) {
-  Style[Style["WIRE"] = 0] = "WIRE";
-  Style[Style["POINTS"] = 1] = "POINTS";
-  Style[Style["MESH"] = 2] = "MESH";
-})(Style || (Style = {}));
+(function (TextureType) {
+  TextureType[TextureType["TOP_BOTTOM"] = 0] = "TOP_BOTTOM";
+  TextureType[TextureType["SEPERATE"] = 1] = "SEPERATE";
+})(TextureType || (TextureType = {}));
 
 class Viewer extends Object3D {
   constructor() {
@@ -70,8 +74,8 @@ class Viewer extends Object3D {
     var texturePath = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
     var depthPath = arguments.length > 1 ? arguments[1] : undefined;
     var textureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : TextureType.SEPERATE;
-    var meshDensity = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : MeshDensity.EXTRA_HIGH;
-    var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Style.MESH;
+    var meshDensity = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : MeshDensity.HIGH;
+    var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Style.POINTS;
     var displacement = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
     super();
     _this = this;
@@ -97,17 +101,20 @@ class Viewer extends Object3D {
     if (textureType === TextureType.SEPERATE) {
       if (!depthPath) {
         throw new Error('When using seperate textures you must provide a depth texture as well');
-      } // Inform the shader we are providing two seperate textures
+      }
+      /** Inform the shader we are providing two seperate textures */
 
 
-      this.material.uniforms.isSeperate.value = true; // Load the depth map
+      this.material.uniforms.isSeperate.value = true;
+      /** Load the depthmap */
 
       this.load(depthPath).then(function (texture) {
         _this.material.uniforms.depthMap.value = texture;
       })["catch"](function (err) {
         throw new Error(err);
       });
-    } // Load the texture
+    }
+    /** Load the texture */
 
 
     this.load(texturePath).then(function (texture) {
@@ -163,5 +170,5 @@ class Viewer extends Object3D {
 
 }
 
-export { TextureType, Viewer };
+export { MeshDensity, TextureType, Viewer };
 //# sourceMappingURL=three-6dof.esm.js.map

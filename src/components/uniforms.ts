@@ -1,6 +1,6 @@
 import { Vector2, Vector4 } from 'three'
 
-const Uniforms = {
+export const Uniforms: object = {
   map: {
     type: 't',
     value: null,
@@ -34,5 +34,3 @@ const Uniforms = {
     value: 1.0,
   },
 }
-
-export default Uniforms
