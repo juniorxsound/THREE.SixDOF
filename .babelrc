@@ -1,0 +1,17 @@
+{
+    "presets": [
+      [
+        "@babel/env", { 
+        "exclude": [
+          "@babel/plugin-transform-regenerator",
+          "@babel/plugin-transform-for-of",
+          "@babel/plugin-transform-classes"
+        ]
+        }
+      ],
+      "@babel/typescript"
+    ],
+    "plugins": [
+      ["@babel/plugin-proposal-class-properties", { "loose": true }]
+    ]
+  }
