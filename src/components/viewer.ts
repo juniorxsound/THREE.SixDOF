@@ -46,7 +46,7 @@ export default class Viewer extends Object3D {
       throw new Error('Texture path must be defined when creating a viewer')
     }
 
-    this.createSphere(10, meshDensity)
+    this.createSphere(6, meshDensity)
     this.setTextures(texturePath, depthPath, textureType)
     this.setDisplacement(displacement)
 

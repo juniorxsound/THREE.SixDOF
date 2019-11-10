@@ -10,7 +10,7 @@
 
   var frag = "#define GLSLIFY 1\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform float debugDepth;\nuniform bool isSeperate;\nuniform float opacity;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nvoid main() {\n\n    // If it's a single texture crop the uvs used to read the textures\n    vec2 depthUvs = isSeperate ? vUv : vec2(vUv.x, vUv.y * 0.5);\n    vec2 colorUvs = isSeperate ? vUv : vec2(vUv.x, (vUv.y * 0.5) + 0.5);\n\n    vec3 depth;\n\n    // @TODO This is a pretty expansive op perhaps split it into two shaders and pick one when compiling the WebGL program\n    if (isSeperate) {\n        depth = texture2D(depthMap, depthUvs).rgb;\n    } else {\n        depth = texture2D(map, depthUvs).rgb;\n    }\n    vec3 color = texture2D(map, colorUvs).rgb;\n\n    // Mix the depth and color based on debugDepth value\n    vec3 depthColorMixer = mix(color, depth , debugDepth);\n\n    // Render dat fragment\n    gl_FragColor = vec4(depthColorMixer, opacity);\n}"; // eslint-disable-line
 
-  var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\nuniform float displacement;\n\nvoid main() {\n    vUv = uv;\n    vNormal = normalMatrix * normal;\n    gl_PointSize = pointSize;\n\n    // Transform the vert by the depth value (per vertex in the normals direction)\n    vec3 vertPos = position;\n    vec2 depthUvs = isSeperate ? uv : vec2(uv.x, uv.y * 0.5);\n    vec4 depth;\n\n    // @TODO This is a pretty expansive op perhaps split it into two shaders and pick one when compiling the WebGL program\n    if (isSeperate) {\n        depth = texture2D(depthMap, depthUvs);\n    } else {\n        depth = texture2D(map, depthUvs);\n    }\n    vertPos += 1.0 - ((depth.r * vNormal) * displacement);\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(vertPos, 1.0);\n}"; // eslint-disable-line
+  var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\nuniform float displacement;\n\nfloat depthFromTexture(sampler2D tex1, sampler2D tex2, vec2 uv, bool isSeperate) {\n    \n    vec2 depthUvs = isSeperate ? uv : vec2(uv.x, uv.y * 0.5);\n\n    if (isSeperate) return texture2D(tex2, depthUvs).r;\n\n    return texture2D(tex1, depthUvs).r;\n}\n\nvoid main() {\n\n    vUv = uv;\n    vNormal = normalize(normalMatrix * normal);\n\n    gl_PointSize = pointSize;\n\n    float depth = depthFromTexture(map, depthMap, uv, isSeperate);\n    float disp = displacement * depth;\n    vec3 offset = position + (-normal) * disp;\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(offset, 1.0);\n}"; // eslint-disable-line
 
   var Uniforms = {
     map: {
@@ -91,7 +91,7 @@
         throw new Error('Texture path must be defined when creating a viewer');
       }
 
-      this.createSphere(10, meshDensity);
+      this.createSphere(6, meshDensity);
       this.setTextures(texturePath, depthPath, textureType);
       this.setDisplacement(displacement);
       /** Create the Mesh/Points and add it to the viewer object */

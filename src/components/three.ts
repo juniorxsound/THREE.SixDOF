@@ -12,5 +12,5 @@ export {
   Mesh,
   Points,
   SphereBufferGeometry,
-  Texture,
+  Texture
 } from 'three'
