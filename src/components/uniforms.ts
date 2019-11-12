@@ -1,5 +1,3 @@
-import { Vector2, Vector4 } from 'three'
-
 export const Uniforms: object = {
   colorTexture: {
     type: 't',
