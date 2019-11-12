@@ -164,7 +164,7 @@ export default class Viewer extends Object3D {
   public set opacity(val: number) {
     this.material.uniforms.opacity.value = val
   }
-  
+
   /** Setter for the point size */
   public set pointSize(val: number) {
     this.material.uniforms.pointSize.value = val
