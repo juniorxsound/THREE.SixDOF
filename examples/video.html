@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>6DOF Viewer Example</title>
+    <title>6DOF Video Viewer Example</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
@@ -30,23 +30,19 @@
             background: rgba(0, 0, 0, 0.7);
         }
     </style>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+</head>
 
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="public/images/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="public/images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="public/images/favicon-16x16.png">
-    <link rel="manifest" href="public/site.webmanifest">
-
-    <!-- Scripts -->
+<body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/109/three.min.js"
         integrity="sha256-Wua0LsQkGDEeIkbmBNjj9wcThJh5uCD6R8+5YQhXveQ=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"
         integrity="sha256-HJ7j+71YYw6Kcs8THwQV9lXmPOcR0eXlg7n8KRTZsyA=" crossorigin="anonymous"></script>
-    <script src="./public/js/WebVR.js"></script>
+    <script src="./lib/WebVR.js"></script>
     <script src="../dist/three-6dof.js"></script>
-</head>
-
-<body>
 
     <div id="info">
         <span id="info_wrapper">
@@ -64,6 +60,7 @@
             displacement: 4.0,
             debugDepth: false,
             toggleView: () => { },
+            playVideo: () => { },
             autoRotate: true
         };
 
@@ -81,21 +78,18 @@
         cameraDolly.add(camera);
         scene.add(cameraDolly);
 
-        var loadingManager = new THREE.LoadingManager();
-        var textureLoader = new THREE.TextureLoader(loadingManager);
-
-        // Load the textures and store them
-        var colorTexture, depthTexture;
-        textureLoader.load('../assets/kandao3.jpg', texture => { colorTexture = texture });
-        textureLoader.load('../assets/kandao3_depthmap.jpg', texture => { depthTexture = texture });
-
-        // On finish loading create the viewer with the textures
-        loadingManager.onLoad = () => {
-            var viewer = new SixDOF.Viewer(colorTexture, depthTexture);
-            scene.add(viewer);
-        }
+        var viewer = new SixDOF.Viewer(
+            '../assets/indoor_264.mp4',
+            null,
+            SixDOF.TextureType.TOP_BOTTOM,
+            SixDOF.MeshDensity.HIGH,
+            SixDOF.Style.MESH,
+            4.0 // Displacement amount
+        );
+        scene.add(viewer);
 
         renderer.setAnimationLoop(() => {
+            if (guiParams.autoRotate) viewer.rotation.y += 0.001;
             renderer.render(scene, camera);
         });
 
@@ -149,6 +143,13 @@
                 } else {
                     cameraDolly.position.set(0, 0, 0);
                 }
+            });
+
+        gui
+            .add(guiParams, 'playVideo')
+            .name('Play Video')
+            .onChange(() => {
+                viewer.videoElm.play();
             });
     </script>
 </body>

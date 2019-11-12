@@ -1,26 +1,30 @@
-import { Object3D, ShaderMaterial, TextureLoader, IcosahedronBufferGeometry, Texture } from './three';
-import { Style } from './style';
-import { MeshDensity } from './density';
-import { TextureType } from './texture';
+import { Object3D, Texture } from './three';
+import { Props } from './constants';
 export default class Viewer extends Object3D {
-    props: object;
-    protected loader: TextureLoader;
-    protected obj: Object3D;
-    protected geometry: IcosahedronBufferGeometry;
-    protected material: ShaderMaterial;
-    constructor(texturePath?: string, depthPath?: string, textureType?: TextureType, meshDensity?: MeshDensity, style?: Style, displacement?: number);
-    private createSphere;
-    /** Internal utility to load texture and set the shader uniforms */
-    private setTextures;
-    /** An internal util to create the scene Object3D */
-    protected createSceneObjectWithStyle(style: Style): Object3D;
-    /** Promised wrapper for the TextureLoader */
-    protected load(texturePath: string): Promise<Texture>;
-    protected resetStyle(): void;
+    /** Default props if not provided */
+    private props;
+    private static geometry;
+    private material;
+    constructor(texture: Texture, depth?: Texture, props?: object);
+    /** Small util to set the defines of the GLSL program based on textureType */
+    private setShaderDefines;
+    /** Internal util to create buffer geometry */
+    private createSphereGeometry;
+    /** Internal util to set viewer props from config object */
+    private setProps;
+    /** Internal util to assign the textures to the shader uniforms */
+    private assignTexture;
+    private setDefaultTextureProps;
+    /** An internal util to create the Mesh Object3D */
+    private createMesh;
     /** Toggle vieweing texture or depthmap in viewer */
     toggleDepthDebug(state?: boolean): void;
     /** Setter for displacement amount */
-    setDisplacement(amount: number): void;
-    setStyle(style: Style): void;
-    setStyleFromString(style: string): void;
+    set displacement(val: number);
+    /** Setter for depthmap uniform */
+    set depth(map: Texture);
+    /** Setter for depthmap uniform */
+    set texture(map: Texture);
+    /** Getter for the current viewer props */
+    get config(): Props;
 }

@@ -4,16 +4,16 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
    * A small wrapper for THREE imports so rollup tree-shakes only the parts we need better
    */
 
-  var frag = "#define GLSLIFY 1\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform float debugDepth;\nuniform bool isSeperate;\nuniform float opacity;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nvoid main() {\n\n    // If it's a single texture crop the uvs used to read the textures\n    vec2 depthUvs = isSeperate ? vUv : vec2(vUv.x, vUv.y * 0.5);\n    vec2 colorUvs = isSeperate ? vUv : vec2(vUv.x, (vUv.y * 0.5) + 0.5);\n\n    vec3 depth;\n\n    // @TODO This is a pretty expansive op perhaps split it into two shaders and pick one when compiling the WebGL program\n    if (isSeperate) {\n        depth = texture2D(depthMap, depthUvs).rgb;\n    } else {\n        depth = texture2D(map, depthUvs).rgb;\n    }\n    vec3 color = texture2D(map, colorUvs).rgb;\n\n    // Mix the depth and color based on debugDepth value\n    vec3 depthColorMixer = mix(color, depth , debugDepth);\n\n    // Render dat fragment\n    gl_FragColor = vec4(depthColorMixer, opacity);\n}"; // eslint-disable-line
+  var frag = "#define GLSLIFY 1\n\n/** Small util to get the depth texture */\nvec3 getDepth(sampler2D depth, vec2 uvs) {\n\n    /** Return the depth texture */\n    return texture2D(depth, uvs).rgb;\n}\n\n/** Small util to get the lower half of a texture (in our case the depthmap) */\nvec3 getDepthFromBottomHalf(sampler2D tex, vec2 uvs) {\n    \n    /** Chop the uvs to the lower half of the texture (i.e top-bottom) */\n    vec2 lower_half_uvs = vec2(uvs.x, uvs.y * 0.5);\n\n    /** Return the depth texture */\n    return texture2D(tex, lower_half_uvs).rgb;\n}\n\n/** Small util to get the upper half of a texture (in our case the color texture) */\nvec3 getColorFromUpperHalf(sampler2D tex, vec2 uvs) {\n    \n    /** Chop the uvs to the lower half of the texture (i.e top-bottom) */\n    vec2 upper_half_uvs = vec2(uvs.x, (uvs.y * 0.5) + 0.5);\n\n    /** Return the depth texture */\n    return texture2D(tex, upper_half_uvs).rgb;\n}\n\n// Uniforms\nuniform sampler2D colorTexture;\nuniform sampler2D depthTexture;\nuniform float debugDepth;\nuniform float opacity;\n\n// Varyings from vertex program\nvarying vec2 vUv;\n\n// Internal\nvec3 depth;\nvec3 color;\n\nvoid main() {\n\n/** Use compiler definitions to know which method to pick */\n#ifdef TOP_BOTTOM\n    depth = getDepthFromBottomHalf(colorTexture, vUv);\n    color = getColorFromUpperHalf(colorTexture, vUv);\n#endif\n\n#ifdef SEPERATE\n    depth = getDepth(depthTexture, vUv);\n    color = texture2D(colorTexture, vUv).rgb;\n#endif\n\n    // Mix the depth and color based on debugDepth value\n    vec3 depthColorMixer = mix(color, depth , debugDepth);\n\n    // Render dat fragment\n    gl_FragColor = vec4(depthColorMixer, opacity);\n}\n"; // eslint-disable-line
 
-  var vert = "#define GLSLIFY 1\nvarying vec2 vUv;\nvarying vec3 vNormal;\n\nuniform sampler2D map;\nuniform sampler2D depthMap;\nuniform bool isSeperate;\nuniform float pointSize;\nuniform float displacement;\n\nfloat depthFromTexture(sampler2D tex1, sampler2D tex2, vec2 uv, bool isSeperate) {\n    \n    vec2 depthUvs = isSeperate ? uv : vec2(uv.x, uv.y * 0.5);\n\n    if (isSeperate) return texture2D(tex2, depthUvs).r;\n\n    return texture2D(tex1, depthUvs).r;\n}\n\nvoid main() {\n\n    vUv = uv;\n    vNormal = normalize(normalMatrix * normal);\n\n    gl_PointSize = pointSize;\n\n    float depth = depthFromTexture(map, depthMap, uv, isSeperate);\n    float disp = displacement * depth;\n    vec3 offset = position + (-normal) * disp;\n\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(offset, 1.0);\n}"; // eslint-disable-line
+  var vert = "#define GLSLIFY 1\n\n/** Small util to get the depth texture */\nvec3 getDepth(sampler2D depth, vec2 uvs) {\n\n    /** Return the depth texture */\n    return texture2D(depth, uvs).rgb;\n}\n\n/** Small util to get the lower half of a texture (in our case the depthmap) */\nvec3 getDepthFromBottomHalf(sampler2D tex, vec2 uvs) {\n    \n    /** Chop the uvs to the lower half of the texture (i.e top-bottom) */\n    vec2 lower_half_uvs = vec2(uvs.x, uvs.y * 0.5);\n\n    /** Return the depth texture */\n    return texture2D(tex, lower_half_uvs).rgb;\n}\n\n// Uniforms\nuniform sampler2D colorTexture;\nuniform sampler2D depthTexture;\nuniform float pointSize;\nuniform float displacement;\n\n// Varyings passed to fragment\nvarying vec2 vUv;\n\n// Internal\nfloat depth;\n\nvoid main() {\n\n    /** Transform and pass to fragment shader */\n    vUv = uv;\n\n    /** Set the GL point size for when rendering points, ignored otherwise */\n    gl_PointSize = pointSize;\n\n/** Use compiler definitions to know which method to pick */\n#ifdef TOP_BOTTOM\n    depth = getDepthFromBottomHalf(colorTexture, vUv).r;\n#endif\n\n#ifdef SEPERATE\n    depth = getDepth(depthTexture, vUv).r;\n#endif\n\n    /** \n    * Invert the normals (since they are pointing outwards) and \n    * move the position on the normal direction scaled by the \n    * displacement which is the depth for the current vertex\n    * multiplied by a `displacement` scalaer\n    **/\n    float disp = displacement * depth;\n    vec3 offset = position + (-normal) * disp;\n\n    /** Transform */\n    gl_Position = projectionMatrix *\n                    modelViewMatrix *\n                    vec4(offset, 1.0);\n}"; // eslint-disable-line
 
   var Uniforms = {
-    map: {
+    colorTexture: {
       type: 't',
       value: null
     },
-    depthMap: {
+    depthTexture: {
       type: 't',
       value: null
     },
@@ -33,21 +33,11 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
       type: 'f',
       value: 0.0
     },
-    isSeperate: {
-      type: 'b',
-      value: false
-    },
     displacement: {
       type: 'f',
       value: 1.0
     }
   };
-
-  (function (Style) {
-    Style[Style["WIRE"] = 0] = "WIRE";
-    Style[Style["POINTS"] = 1] = "POINTS";
-    Style[Style["MESH"] = 2] = "MESH";
-  })(exports.Style || (exports.Style = {}));
 
   (function (MeshDensity) {
     MeshDensity[MeshDensity["LOW"] = 64] = "LOW";
@@ -57,24 +47,39 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
     MeshDensity[MeshDensity["EPIC"] = 1024] = "EPIC";
   })(exports.MeshDensity || (exports.MeshDensity = {}));
 
+
+
+  (function (Style) {
+    Style[Style["WIRE"] = 0] = "WIRE";
+    Style[Style["POINTS"] = 1] = "POINTS";
+    Style[Style["MESH"] = 2] = "MESH";
+  })(exports.Style || (exports.Style = {}));
+
+
+
   (function (TextureType) {
     TextureType[TextureType["TOP_BOTTOM"] = 0] = "TOP_BOTTOM";
     TextureType[TextureType["SEPERATE"] = 1] = "SEPERATE";
   })(exports.TextureType || (exports.TextureType = {}));
 
-  class Viewer extends three.Object3D {
+  class Props {
     constructor() {
-      var texturePath = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
-      var depthPath = arguments.length > 1 ? arguments[1] : undefined;
-      var textureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : exports.TextureType.TOP_BOTTOM;
-      var meshDensity = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : exports.MeshDensity.HIGH;
-      var style = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : exports.Style.MESH;
-      var displacement = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
+      this.type = exports.TextureType.SEPERATE;
+      this.density = exports.MeshDensity.HIGH;
+      this.style = exports.Style.MESH;
+      this.displacement = 4.0;
+      this.radius = 6;
+    }
+
+  }
+
+  class Viewer extends three.Object3D {
+    /** Default props if not provided */
+    constructor(texture, depth, props) {
       super();
-      this.props = void 0;
-      this.loader = new three.TextureLoader();
-      this.obj = void 0;
-      this.geometry = void 0;
+      /** Assign the user provided props, if any */
+
+      this.props = new Props();
       this.material = new three.ShaderMaterial({
         uniforms: Uniforms,
         vertexShader: vert,
@@ -82,87 +87,95 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
         transparent: true,
         side: three.BackSide
       });
+      this.setProps(this.props, props); // /** Add the compiler definitions needed to pick the right GLSL methods */
 
-      if (!texturePath) {
-        throw new Error('Texture path must be defined when creating a viewer');
+      this.setShaderDefines(this.material, [exports.TextureType[this.props.type]]);
+      /**
+       * Create the geometry only once, it can be shared between instances
+       *  of the viewer since it's kept as a static class member
+       **/
+
+      if (!Viewer.geometry) {
+        Viewer.geometry = this.createSphereGeometry(this.props.radius, this.props.density);
       }
+      /** Assign the textures and update the shader uniforms */
 
-      this.createSphere(6, meshDensity);
-      this.setTextures(texturePath, depthPath, textureType);
-      this.setDisplacement(displacement);
+
+      this.assignTexture(this.props.type, texture, depth);
+      /** Set the displacement using the public setter */
+
+      this.displacement = this.props.displacement;
       /** Create the Mesh/Points and add it to the viewer object */
 
-      this.obj = this.createSceneObjectWithStyle(style);
-      super.add(this.obj);
+      super.add(this.createMesh(Viewer.geometry, this.material, this.props.style));
     }
-
-    createSphere(radius, meshDensity) {
-      this.geometry = new three.SphereBufferGeometry(radius, meshDensity, meshDensity);
-    }
-    /** Internal utility to load texture and set the shader uniforms */
+    /** Small util to set the defines of the GLSL program based on textureType */
 
 
-    setTextures(texturePath, depthPath, textureType) {
-      var _this = this;
-
-      if (textureType === exports.TextureType.SEPERATE) {
-        if (!depthPath) {
-          throw new Error('When using seperate textures you must provide a depth texture as well');
-        }
-        /** Load the depthmap */
-
-
-        this.load(depthPath).then(function (texture) {
-          /** Inform the shader we are providing two seperate textures and set the texture */
-          _this.material.uniforms.isSeperate.value = true;
-          _this.material.uniforms.depthMap.value = texture;
-        })["catch"](function (err) {
-          throw new Error(err);
-        });
-      } else {
-        this.material.uniforms.isSeperate.value = false;
-      }
-      /** Load the texture */
-
-
-      this.load(texturePath).then(function (texture) {
-        _this.material.uniforms.map.value = texture;
-      })["catch"](function (err) {
-        throw new Error(err);
+    setShaderDefines(material, defines) {
+      defines.forEach(function (define) {
+        return material.defines[define] = '';
       });
     }
-    /** An internal util to create the scene Object3D */
+    /** Internal util to create buffer geometry */
 
 
-    createSceneObjectWithStyle(style) {
+    createSphereGeometry(radius, meshDensity) {
+      return new three.SphereBufferGeometry(radius, meshDensity, meshDensity);
+    }
+    /** Internal util to set viewer props from config object */
+
+
+    setProps(viewerProps, userProps) {
+      if (!userProps) return;
+      /** Iterate over user provided props and assign to viewer props */
+
+      for (var prop in userProps) {
+        if (viewerProps[prop]) {
+          viewerProps[prop] = userProps[prop];
+        } else {
+          console.warn("THREE.SixDOF: Provided ".concat(prop, " in config but it is not a valid property and being ignored"));
+        }
+      }
+    }
+    /** Internal util to assign the textures to the shader uniforms */
+
+
+    assignTexture(type, colorTexture, depthTexture) {
+      /** Check wheter we are rendering top bottom or just single textures */
+      if (type === exports.TextureType.SEPERATE) {
+        if (!depthTexture) throw new Error('When using seperate texture type, depthmap must be provided');
+        this.depth = this.setDefaultTextureProps(depthTexture);
+      }
+      /** Assign the main texture */
+
+
+      this.texture = this.setDefaultTextureProps(colorTexture);
+    }
+
+    setDefaultTextureProps(texture) {
+      texture.minFilter = three.NearestFilter;
+      texture.magFilter = three.LinearFilter;
+      texture.format = three.RGBFormat;
+      texture.generateMipmaps = false;
+      return texture;
+    }
+    /** An internal util to create the Mesh Object3D */
+
+
+    createMesh(geo, mat, style) {
       switch (style) {
         case exports.Style.WIRE:
-          this.material.wireframe = true;
+          if (!this.material.wireframe) this.material.wireframe = true;
+          return new three.Mesh(geo, mat);
 
         case exports.Style.MESH:
-          return new three.Mesh(this.geometry, this.material);
+          if (this.material.wireframe) this.material.wireframe = false;
+          return new three.Mesh(geo, mat);
 
         case exports.Style.POINTS:
-          return new three.Points(this.geometry, this.material);
+          return new three.Points(geo, mat);
       }
-    }
-    /** Promised wrapper for the TextureLoader */
-
-
-    load(texturePath) {
-      var _this2 = this;
-
-      return new Promise(function (resolve, reject) {
-        _this2.loader.load(texturePath, function (texture) {
-          return resolve(texture);
-        }, undefined, function () {
-          return reject("Error loading texture error");
-        });
-      });
-    }
-
-    resetStyle() {
-      this.material.wireframe = false;
     }
     /** Toggle vieweing texture or depthmap in viewer */
 
@@ -173,25 +186,30 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
     /** Setter for displacement amount */
 
 
-    setDisplacement(amount) {
-      this.material.uniforms.displacement.value = amount;
+    set displacement(val) {
+      this.material.uniforms.displacement.value = val;
     }
+    /** Setter for depthmap uniform */
 
-    setStyle(style) {
-      super.remove(this.obj);
-      this.resetStyle();
-      this.obj = this.createSceneObjectWithStyle(style);
-      super.add(this.obj);
+
+    set depth(map) {
+      this.material.uniforms.depthTexture.value = map;
     }
+    /** Setter for depthmap uniform */
 
-    setStyleFromString(style) {
-      super.remove(this.obj);
-      this.resetStyle();
-      this.obj = this.createSceneObjectWithStyle(exports.Style[style]);
-      super.add(this.obj);
+
+    set texture(map) {
+      this.material.uniforms.colorTexture.value = map;
+    }
+    /** Getter for the current viewer props */
+
+
+    get config() {
+      return this.props;
     }
 
   }
+  Viewer.geometry = void 0;
 
   exports.Viewer = Viewer;
 
