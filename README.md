@@ -50,8 +50,8 @@ import {
 ```
 
 ### Examples
-- [Image live example](https://juniorxsound.github.io/THREE.SixDOF/examples/image.html) - [code](https://github.com/juniorxsound/THREE.SixDOF/tree/master/docs/image.html)
-- [Video live example](https://juniorxsound.github.io/THREE.SixDOF/examples/video.html) - [code](https://github.com/juniorxsound/THREE.SixDOF/tree/master/docs/video.html)
+- [Image live example](https://juniorxsound.github.io/THREE.SixDOF/examples/image.html) - [code](https://github.com/juniorxsound/THREE.SixDOF/tree/master/examples/image.html)
+- [Video live example](https://juniorxsound.github.io/THREE.SixDOF/examples/video.html) - [code](https://github.com/juniorxsound/THREE.SixDOF/tree/master/examples/video.html)
 
 ### API
 When creating a viewer you pass the following parameters
