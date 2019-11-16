@@ -16,7 +16,7 @@
     "postinstall": "yarn build",
     "examples": "http-server ./"
   },
-  "author": "",
+  "author": "Or Fleisher <https://orfleisher.com>",
   "license": "MIT",
   "homepage": "https://github.com/UmbraSoftware/umbrajs-three#readme",
   "repository": {
