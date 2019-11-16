@@ -95,8 +95,8 @@
 
         // Load the textures and store them
         var colorTexture, depthTexture;
-        textureLoader.load('../assets/kandao3.jpg', texture => { colorTexture = texture });
-        textureLoader.load('../assets/kandao3_depthmap.jpg', texture => { depthTexture = texture });
+        textureLoader.load('./public/images/equirectangular/kandao3.jpg', texture => { colorTexture = texture });
+        textureLoader.load('./public/images/equirectangular/kandao3_depthmap.jpg', texture => { depthTexture = texture });
 
         // On finish loading create the viewer with the textures
         loadingManager.onLoad = () => {
