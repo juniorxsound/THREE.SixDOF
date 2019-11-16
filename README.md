@@ -1,8 +1,8 @@
 <div align="center">
 <h1>THREE.6DoF</h1>
 <img href="https://juniorxsound.github.io/THREE.SixDOF/examples/image.html" src="./docs/cover.gif" /><br/>
-<img src="https://github.com/juniorxsound/THREE.SixDOF/workflows/CI/badge.svg" />
 <p>Plugin for rendering 6DoF equirectangular 360 images and video with depthmaps 🌐</p>
+<img src="https://github.com/juniorxsound/THREE.SixDOF/workflows/CI/badge.svg" /><br/>
 <a href="#getting-started">Getting started</a> •
 <a href="#examples">Examples</a> •
 <a href="#api">API</a> •
