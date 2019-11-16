@@ -25,6 +25,20 @@ export default class Viewer extends Object3D {
     set depth(map: Texture);
     /** Setter for depthmap uniform */
     set texture(map: Texture);
+    /** Setter for the opacity */
+    set opacity(val: number);
+    /** Setter for the point size */
+    set pointSize(val: number);
     /** Getter for the current viewer props */
     get config(): Props;
+    /** Getter for the opacity */
+    get opacity(): number;
+    /** Getter for the point size */
+    get pointSize(): number;
+    /** Getter for displacement amount */
+    get displacement(): number;
+    /** Getter for texture */
+    get texture(): Texture;
+    /** Getter for the depth texture */
+    get depth(): Texture;
 }

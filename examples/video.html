@@ -36,9 +36,9 @@
     </style>
 
     <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="public/images/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="public/images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="public/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="public/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="public/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="public/images/favicon/favicon-16x16.png">
     <link rel="manifest" href="public/site.webmanifest">
 
     <!-- Libraries -->
@@ -64,17 +64,15 @@
         </span>
     </div>
 
-    <!-- Video Element for video example -->
-    <video src="../assets/indoor_264.mp4" id="six_dof_demo"
-        autoplay muted playsinline loop />
+    <video id="sixdof" muted autoplay loop playsinline src="./public/videos/kandao.mp4" />
 
     <script>
         'use strict';
         // debug GUI
-        var debugGUI;
+        var gui = new dat.GUI();
 
-        // We will create the viewer once the textures are loaded
-        var sixDofViewer;
+        // Keep track of time
+        var clock = new THREE.Clock();
 
         // Create the scene, renderer and camera
         var scene = new THREE.Scene();
@@ -91,26 +89,63 @@
         cameraDolly.add(camera);
         scene.add(cameraDolly);
 
-        // Create the video texture
-        var videoElement = document.getElementById('six_dof_demo');
-        var videoTexture = new THREE.VideoTexture(videoElement);
+        // Get the video element and create a texture
+        var videoElm = document.getElementById('sixdof');
+        var videoTex = new THREE.VideoTexture(videoElm);
 
-        // Create the viewer
-        sixDofViewer = new SixDOF.Viewer(videoTexture, null, {
+        // Add play button to GUI
+        gui.add({ 'playVideo': () => { } }, 'playVideo')
+            .name('Play Video')
+            .onChange(() => {
+                videoElm.play();
+            })
+
+        // Load the textures and store them
+        var sixDofViewer = new SixDOF.Viewer(videoTex, null, {
             type: SixDOF.TextureType.TOP_BOTTOM
         });
         scene.add(sixDofViewer);
 
-        // Create the debug GUI
-        debugGUI = THREE.GUI.create(sixDofViewer, scene);
-        debugGUI.add({ 'playVideo': () => { } }, 'playVideo')
-            .name('Play Video')
-            .onChange(() => {
-                videoElement.play()
+        // Create the debug GUI and add some debug params
+        var shaderParams = gui.addFolder('Shader');
+        shaderParams.add(sixDofViewer, 'displacement', 0, 7).name('Displacement');
+        shaderParams.add(sixDofViewer, 'opacity', 0, 1).name('Opacity');
+        shaderParams.add(sixDofViewer, 'pointSize', 0, 10).name('Point Size');
+        shaderParams.add({ 'debugDepth': false }, 'debugDepth')
+            .name('Debug Depth')
+            .onChange(val => {
+                sixDofViewer.toggleDepthDebug(val);
             });
-        
+        shaderParams.add({
+            'changeStyle': () => { }
+        }, 'changeStyle', {
+            'Mesh': SixDOF.Style[SixDOF.Style.MESH],
+            'Wireframe': SixDOF.Style[SixDOF.Style.WIRE],
+            'Pointcloud': SixDOF.Style[SixDOF.Style.POINTS]
+        })
+            .name('Rendering Style')
+            .onChange(val => {
+                scene.remove(sixDofViewer);
+                sixDofViewer = new SixDOF.Viewer(videoTex, null, {
+                    'type': SixDOF.TextureType.TOP_BOTTOM,
+                    'style': SixDOF.Style[val]
+                });
+                scene.add(sixDofViewer);
+            });
+
+        shaderParams.open();
 
         renderer.setAnimationLoop(() => {
+
+            // If we are not in VR spin the camera a little
+            if (!renderer.vr.isPresenting()) {
+                var time = clock.getElapsedTime();
+
+                cameraDolly.position.x = Math.sin(time) * 0.2;
+                cameraDolly.position.z = Math.cos(time) * 0.2;
+                cameraDolly.rotation.y += 0.001;
+            }
+
             renderer.render(scene, camera);
         });
 

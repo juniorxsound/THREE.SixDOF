@@ -64,16 +64,16 @@
         </span>
     </div>
 
-    <!-- Video Element for video example -->
-    <video src="https://storage.cloud.google.com/orfleisher-production.appspot.com/videos/dutch.mp4" id="six_dof_demo" muted playsinline loop />
-
     <script>
         'use strict';
         // debug GUI
-        var debugGUI;
+        var gui = new dat.GUI();
 
         // We will create the viewer once the textures are loaded
         var sixDofViewer;
+
+        // Keep track of time
+        var clock = new THREE.Clock();
 
         // Create the scene, renderer and camera
         var scene = new THREE.Scene();
@@ -103,15 +103,46 @@
             sixDofViewer = new SixDOF.Viewer(colorTexture, depthTexture);
             scene.add(sixDofViewer);
 
-            // Create the debug GUI
-            debugGUI = THREE.GUI.create(sixDofViewer, scene);
-            debugGUI.add({ 'showVideo': () => { } }, 'showVideo')
-                .name('Video Example')
-                .onChange(() => {
+            // Create the debug GUI and add some debug params
+            var shaderParams = gui.addFolder('Shader');
+            shaderParams.add(sixDofViewer, 'displacement', 0, 7).name('Displacement');
+            shaderParams.add(sixDofViewer, 'opacity', 0, 1).name('Opacity');
+            shaderParams.add(sixDofViewer, 'pointSize', 0, 10).name('Point Size');
+            shaderParams.add({ 'debugDepth': false }, 'debugDepth')
+                .name('Debug Depth')
+                .onChange(val => {
+                    sixDofViewer.toggleDepthDebug(val);
                 });
+            shaderParams.add({
+                'changeStyle': () => { }
+            }, 'changeStyle', {
+                'Mesh': SixDOF.Style[SixDOF.Style.MESH],
+                'Wireframe': SixDOF.Style[SixDOF.Style.WIRE],
+                'Pointcloud': SixDOF.Style[SixDOF.Style.POINTS]
+            })
+                .name('Rendering Style')
+                .onChange(val => {
+                    scene.remove(sixDofViewer);
+                    sixDofViewer = new SixDOF.Viewer(colorTexture, depthTexture, {
+                        'style': SixDOF.Style[val]
+                    });
+                    scene.add(sixDofViewer);
+                });
+
+            shaderParams.open();
         }
 
         renderer.setAnimationLoop(() => {
+
+            // If we are not in VR spin the camera a little
+            if (!renderer.vr.isPresenting()) {
+                var time = clock.getElapsedTime();
+
+                cameraDolly.position.x = Math.sin(time) * 0.2;
+                cameraDolly.position.z = Math.cos(time) * 0.2;
+                cameraDolly.rotation.y += 0.001;
+            }
+
             renderer.render(scene, camera);
         });
 
