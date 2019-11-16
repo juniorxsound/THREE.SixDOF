@@ -1,32 +1,46 @@
-varying vec2 vUv;
-varying vec3 vNormal;
 
-uniform sampler2D map;
-uniform sampler2D depthMap;
-uniform bool isSeperate;
+#pragma glslify: getDepth = require('./lib/get-depth-seperate')
+#pragma glslify: getDepthFromBottomHalf = require('./lib/get-depth-top-bottom')
+
+// Uniforms
+uniform sampler2D colorTexture;
+uniform sampler2D depthTexture;
 uniform float pointSize;
 uniform float displacement;
 
-float depthFromTexture(sampler2D tex1, sampler2D tex2, vec2 uv, bool isSeperate) {
-    
-    vec2 depthUvs = isSeperate ? uv : vec2(uv.x, uv.y * 0.5);
+// Varyings passed to fragment
+varying vec2 vUv;
 
-    if (isSeperate) return texture2D(tex2, depthUvs).r;
-
-    return texture2D(tex1, depthUvs).r;
-}
+// Internal
+float depth;
 
 void main() {
 
+    /** Transform and pass to fragment shader */
     vUv = uv;
-    vNormal = normalize(normalMatrix * normal);
 
+    /** Set the GL point size for when rendering points, ignored otherwise */
     gl_PointSize = pointSize;
 
-    float depth = depthFromTexture(map, depthMap, uv, isSeperate);
+/** Use compiler definitions to know which method to pick */
+#ifdef TOP_BOTTOM
+    depth = getDepthFromBottomHalf(colorTexture, vUv).r;
+#endif
+
+#ifdef SEPERATE
+    depth = getDepth(depthTexture, vUv).r;
+#endif
+
+    /** 
+    * Invert the normals (since they are pointing outwards) and 
+    * move the position on the normal direction scaled by the 
+    * displacement which is the depth for the current vertex
+    * multiplied by a `displacement` scalaer
+    **/
     float disp = displacement * depth;
     vec3 offset = position + (-normal) * disp;
 
+    /** Transform */
     gl_Position = projectionMatrix *
                     modelViewMatrix *
                     vec4(offset, 1.0);

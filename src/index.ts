@@ -1,6 +1,4 @@
 import Viewer from './components/viewer'
-import { TextureType } from './components/texture'
-import { MeshDensity } from './components/density'
-import { Style } from './components/style'
+import { TextureType, MeshDensity, Style } from './components/constants'
 
 export { Viewer, TextureType, MeshDensity, Style }

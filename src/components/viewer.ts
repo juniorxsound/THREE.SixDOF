@@ -1,12 +1,14 @@
 import {
   Object3D,
   ShaderMaterial,
-  TextureLoader,
   BackSide,
   Mesh,
   Points,
   SphereBufferGeometry,
   Texture,
+  NearestFilter,
+  LinearFilter,
+  RGBFormat,
 } from './three'
 
 // @ts-ignore
@@ -15,16 +17,14 @@ import frag from '../shaders/sixdof.frag'
 import vert from '../shaders/sixdof.vert'
 
 import { Uniforms } from './uniforms'
-import { Style } from './style'
-import { MeshDensity } from './density'
-import { TextureType } from './texture'
+import { Style, MeshDensity, TextureType, Props } from './constants'
 
 export default class Viewer extends Object3D {
-  public props: object
-  protected loader: TextureLoader = new TextureLoader()
-  protected obj: Object3D
-  protected geometry: SphereBufferGeometry
-  protected material: ShaderMaterial = new ShaderMaterial({
+  /** Default props if not provided */
+  private props: Props = new Props()
+
+  private static geometry: SphereBufferGeometry
+  private material: ShaderMaterial = new ShaderMaterial({
     uniforms: Uniforms,
     vertexShader: vert,
     fragmentShader: frag,
@@ -32,96 +32,111 @@ export default class Viewer extends Object3D {
     side: BackSide,
   })
 
-  constructor(
-    texturePath: string = undefined,
-    depthPath?: string,
-    textureType: TextureType = TextureType.TOP_BOTTOM,
-    meshDensity: MeshDensity = MeshDensity.HIGH,
-    style: Style = Style.MESH,
-    displacement: number = 1,
-  ) {
+  constructor(texture: Texture, depth?: Texture, props?: object) {
     super()
 
-    if (!texturePath) {
-      throw new Error('Texture path must be defined when creating a viewer')
+    /** Assign the user provided props, if any */
+    this.setProps(this.props, props)
+
+    // /** Add the compiler definitions needed to pick the right GLSL methods */
+    this.setShaderDefines(this.material, [TextureType[this.props.type]])
+
+    /**
+     * Create the geometry only once, it can be shared between instances
+     *  of the viewer since it's kept as a static class member
+     **/
+    if (!Viewer.geometry) {
+      Viewer.geometry = this.createSphereGeometry(
+        this.props.radius,
+        this.props.density,
+      )
     }
 
-    this.createSphere(6, meshDensity)
-    this.setTextures(texturePath, depthPath, textureType)
-    this.setDisplacement(displacement)
+    /** Assign the textures and update the shader uniforms */
+    this.assignTexture(this.props.type, texture, depth)
+
+    /** Set the displacement using the public setter */
+    this.displacement = this.props.displacement
 
     /** Create the Mesh/Points and add it to the viewer object */
-    this.obj = this.createSceneObjectWithStyle(style)
-    super.add(this.obj)
+    super.add(this.createMesh(Viewer.geometry, this.material, this.props.style))
   }
 
-  private createSphere(radius: number, meshDensity: MeshDensity): void {
-    this.geometry = new SphereBufferGeometry(radius, meshDensity, meshDensity)
-  }
-
-  /** Internal utility to load texture and set the shader uniforms */
-  private setTextures(
-    texturePath: string,
-    depthPath: string,
-    textureType: TextureType,
+  /** Small util to set the defines of the GLSL program based on textureType */
+  private setShaderDefines(
+    material: ShaderMaterial,
+    defines: Array<string>,
   ): void {
-    if (textureType === TextureType.SEPERATE) {
-      if (!depthPath) {
-        throw new Error(
-          'When using seperate textures you must provide a depth texture as well',
+    defines.forEach(define => (material.defines[define] = ''))
+  }
+
+  /** Internal util to create buffer geometry */
+  private createSphereGeometry(
+    radius: number,
+    meshDensity: MeshDensity,
+  ): SphereBufferGeometry {
+    return new SphereBufferGeometry(radius, meshDensity, meshDensity)
+  }
+
+  /** Internal util to set viewer props from config object */
+  private setProps(viewerProps: Props, userProps?: object): void {
+    if (!userProps) return
+
+    /** Iterate over user provided props and assign to viewer props */
+    for (let prop in userProps) {
+      if (viewerProps[prop]) {
+        viewerProps[prop] = userProps[prop]
+      } else {
+        console.warn(
+          `THREE.SixDOF: Provided ${prop} in config but it is not a valid property and being ignored`,
         )
       }
-
-      /** Load the depthmap */
-      this.load(depthPath)
-        .then(texture => {
-          /** Inform the shader we are providing two seperate textures and set the texture */
-          this.material.uniforms.isSeperate.value = true
-          this.material.uniforms.depthMap.value = texture
-        })
-        .catch(err => {
-          throw new Error(err)
-        })
-    } else {
-      this.material.uniforms.isSeperate.value = false
     }
-
-    /** Load the texture */
-    this.load(texturePath)
-      .then(texture => {
-        this.material.uniforms.map.value = texture
-      })
-      .catch(err => {
-        throw new Error(err)
-      })
   }
 
-  /** An internal util to create the scene Object3D */
-  protected createSceneObjectWithStyle(style: Style): Object3D {
+  /** Internal util to assign the textures to the shader uniforms */
+  private assignTexture(
+    type: TextureType,
+    colorTexture: Texture,
+    depthTexture?: Texture,
+  ): void {
+    /** Check wheter we are rendering top bottom or just single textures */
+    if (type === TextureType.SEPERATE) {
+      if (!depthTexture)
+        throw new Error(
+          'When using seperate texture type, depthmap must be provided',
+        )
+      this.depth = this.setDefaultTextureProps(depthTexture)
+    }
+
+    /** Assign the main texture */
+    this.texture = this.setDefaultTextureProps(colorTexture)
+  }
+
+  private setDefaultTextureProps(texture: Texture): Texture {
+    texture.minFilter = NearestFilter
+    texture.magFilter = LinearFilter
+    texture.format = RGBFormat
+    texture.generateMipmaps = false
+    return texture
+  }
+
+  /** An internal util to create the Mesh Object3D */
+  private createMesh(
+    geo: SphereBufferGeometry,
+    mat: ShaderMaterial,
+    style: Style,
+  ): Object3D {
     switch (style) {
       case Style.WIRE:
-        this.material.wireframe = true
+        if (!this.material.wireframe) this.material.wireframe = true
+        return new Mesh(geo, mat)
       case Style.MESH:
-        return new Mesh(this.geometry, this.material)
+        if (this.material.wireframe) this.material.wireframe = false
+        return new Mesh(geo, mat)
       case Style.POINTS:
-        return new Points(this.geometry, this.material)
+        return new Points(geo, mat)
     }
-  }
-
-  /** Promised wrapper for the TextureLoader */
-  protected load(texturePath: string): Promise<Texture> {
-    return new Promise((resolve, reject) => {
-      this.loader.load(
-        texturePath,
-        texture => resolve(texture),
-        undefined,
-        () => reject(`Error loading texture error`),
-      )
-    })
-  }
-
-  protected resetStyle(): void {
-    this.material.wireframe = false
   }
 
   /** Toggle vieweing texture or depthmap in viewer */
@@ -131,21 +146,57 @@ export default class Viewer extends Object3D {
   }
 
   /** Setter for displacement amount */
-  public setDisplacement(amount: number): void {
-    this.material.uniforms.displacement.value = amount
+  public set displacement(val: number) {
+    this.material.uniforms.displacement.value = val
   }
 
-  public setStyle(style: Style): void {
-    super.remove(this.obj)
-    this.resetStyle()
-    this.obj = this.createSceneObjectWithStyle(style)
-    super.add(this.obj)
+  /** Setter for depthmap uniform */
+  public set depth(map: Texture) {
+    this.material.uniforms.depthTexture.value = map
   }
 
-  public setStyleFromString(style: string): void {
-    super.remove(this.obj)
-    this.resetStyle()
-    this.obj = this.createSceneObjectWithStyle(Style[style])
-    super.add(this.obj)
+  /** Setter for depthmap uniform */
+  public set texture(map: Texture) {
+    this.material.uniforms.colorTexture.value = map
+  }
+
+  /** Setter for the opacity */
+  public set opacity(val: number) {
+    this.material.uniforms.opacity.value = val
+  }
+
+  /** Setter for the point size */
+  public set pointSize(val: number) {
+    this.material.uniforms.pointSize.value = val
+  }
+
+  /** Getter for the current viewer props */
+  public get config(): Props {
+    return this.props
+  }
+
+  /** Getter for the opacity */
+  public get opacity(): number {
+    return this.material.uniforms.opacity.value
+  }
+
+  /** Getter for the point size */
+  public get pointSize(): number {
+    return this.material.uniforms.pointSize.value
+  }
+
+  /** Getter for displacement amount */
+  public get displacement(): number {
+    return this.material.uniforms.displacement.value
+  }
+
+  /** Getter for texture */
+  public get texture(): Texture {
+    return this.material.uniforms.colorTexture.value
+  }
+
+  /** Getter for the depth texture */
+  public get depth(): Texture {
+    return this.material.uniforms.opacity.value
   }
 }

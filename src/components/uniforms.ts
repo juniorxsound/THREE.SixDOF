@@ -1,11 +1,9 @@
-import { Vector2, Vector4 } from 'three'
-
 export const Uniforms: object = {
-  map: {
+  colorTexture: {
     type: 't',
     value: null,
   },
-  depthMap: {
+  depthTexture: {
     type: 't',
     value: null,
   },
@@ -24,10 +22,6 @@ export const Uniforms: object = {
   debugDepth: {
     type: 'f',
     value: 0.0,
-  },
-  isSeperate: {
-    type: 'b',
-    value: false,
   },
   displacement: {
     type: 'f',

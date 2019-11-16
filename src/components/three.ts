@@ -7,10 +7,12 @@
 export {
   Object3D,
   ShaderMaterial,
-  TextureLoader,
   BackSide,
   Mesh,
   Points,
   SphereBufferGeometry,
-  Texture
+  Texture,
+  NearestFilter,
+  LinearFilter,
+  RGBFormat,
 } from 'three'

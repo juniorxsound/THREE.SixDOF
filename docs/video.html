@@ -1,0 +1,125 @@
+<html>
+
+<head>
+    <title>THREE.6DOF - Video Viewer Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            font-family: georgia;
+            text-align: center;
+        }
+
+        a {
+            color: skyblue;
+            text-decoration: none
+        }
+
+        video {
+            display: none;
+        }
+
+        #info {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+        }
+
+        #info_wrapper {
+            background: rgba(0, 0, 0, 0.7);
+        }
+    </style>
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="public/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="public/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="public/images/favicon-16x16.png">
+    <link rel="manifest" href="public/site.webmanifest">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/109/three.min.js"
+        integrity="sha256-Wua0LsQkGDEeIkbmBNjj9wcThJh5uCD6R8+5YQhXveQ=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"
+        integrity="sha256-HJ7j+71YYw6Kcs8THwQV9lXmPOcR0eXlg7n8KRTZsyA=" crossorigin="anonymous"></script>
+    <script src="./public/js/WebVR.js"></script>
+    <script src="./public/js/GUIHelper.js"></script>
+
+    <!-- THREE-6DOF -->
+    <script src="../dist/three-6dof.js"></script>
+</head>
+
+<body>
+
+    <div id="info">
+        <span id="info_wrapper">
+            <a href="https://github.com/juniorxsound/THREE.SixDOF" target="_blank" rel="noopener">THREE.6DOF</a> -
+            Video Viewer Example<br /> Written
+            by <a href="https://orfleisher.com">@juniorxsound</a> and <a
+                href="https://github.com/mellinger">@mellinger</a> <br /><br />
+        </span>
+    </div>
+
+    <!-- Video Element for video example -->
+    <video src="../assets/indoor_264.mp4" id="six_dof_demo"
+        autoplay muted playsinline loop />
+
+    <script>
+        'use strict';
+        // debug GUI
+        var debugGUI;
+
+        // We will create the viewer once the textures are loaded
+        var sixDofViewer;
+
+        // Create the scene, renderer and camera
+        var scene = new THREE.Scene();
+
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.vr.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        document.body.appendChild(THREE.WEBVR.createButton(renderer));
+
+        var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
+        var cameraDolly = new THREE.Object3D(); // We use a camera dolly since WebVR/XR will override camera transform
+        cameraDolly.position.y = -1.6;
+        cameraDolly.add(camera);
+        scene.add(cameraDolly);
+
+        // Create the video texture
+        var videoElement = document.getElementById('six_dof_demo');
+        var videoTexture = new THREE.VideoTexture(videoElement);
+
+        // Create the viewer
+        sixDofViewer = new SixDOF.Viewer(videoTexture, null, {
+            type: SixDOF.TextureType.TOP_BOTTOM
+        });
+        scene.add(sixDofViewer);
+
+        // Create the debug GUI
+        debugGUI = THREE.GUI.create(sixDofViewer, scene);
+        debugGUI.add({ 'playVideo': () => { } }, 'playVideo')
+            .name('Play Video')
+            .onChange(() => {
+                videoElement.play()
+            });
+        
+
+        renderer.setAnimationLoop(() => {
+            renderer.render(scene, camera);
+        });
+
+        window.addEventListener('resize', ev => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>
