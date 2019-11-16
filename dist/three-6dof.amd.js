@@ -65,7 +65,7 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
   class Props {
     constructor() {
       this.type = exports.TextureType.SEPERATE;
-      this.density = exports.MeshDensity.EXTRA_HIGH;
+      this.density = exports.MeshDensity.HIGH;
       this.style = exports.Style.MESH;
       this.displacement = 4.0;
       this.radius = 6;

@@ -19,7 +19,7 @@ enum TextureType {
 
 class Props {
   public type: TextureType = TextureType.SEPERATE
-  public density: MeshDensity = MeshDensity.EXTRA_HIGH
+  public density: MeshDensity = MeshDensity.HIGH
   public style: Style = Style.MESH
   public displacement: number = 4.0
   public radius: number = 6

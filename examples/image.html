@@ -84,9 +84,9 @@
         document.body.appendChild(renderer.domElement);
         document.body.appendChild(THREE.WEBVR.createButton(renderer));
 
-        var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
         var cameraDolly = new THREE.Object3D(); // We use a camera dolly since WebVR/XR will override camera transform
-        cameraDolly.position.y = -1.6;
+        cameraDolly.position.y = -1.7;
         cameraDolly.add(camera);
         scene.add(cameraDolly);
 

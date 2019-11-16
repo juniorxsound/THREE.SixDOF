@@ -67,7 +67,7 @@ var TextureType;
 class Props {
   constructor() {
     this.type = TextureType.SEPERATE;
-    this.density = MeshDensity.EXTRA_HIGH;
+    this.density = MeshDensity.HIGH;
     this.style = Style.MESH;
     this.displacement = 4.0;
     this.radius = 6;
