@@ -18,10 +18,10 @@
   },
   "author": "",
   "license": "MIT",
-  "homepage": "https://github.com/UmbraSoftware/umbrajs-three#readme",
+  "homepage": "https://github.com/juniorxsound/THREE.SixDOF",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/UmbraSoftware/umbrajs-three"
+    "url": "git+https://github.com/juniorxsound/THREE.SixDOF"
   },
   "peerDependencies": {
     "three": "^0.110.0"
