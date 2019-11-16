@@ -201,11 +201,53 @@ define(['exports', 'three'], function (exports, three) { 'use strict';
     set texture(map) {
       this.material.uniforms.colorTexture.value = map;
     }
+    /** Setter for the opacity */
+
+
+    set opacity(val) {
+      this.material.uniforms.opacity.value = val;
+    }
+    /** Setter for the point size */
+
+
+    set pointSize(val) {
+      this.material.uniforms.pointSize.value = val;
+    }
     /** Getter for the current viewer props */
 
 
     get config() {
       return this.props;
+    }
+    /** Getter for the opacity */
+
+
+    get opacity() {
+      return this.material.uniforms.opacity.value;
+    }
+    /** Getter for the point size */
+
+
+    get pointSize() {
+      return this.material.uniforms.pointSize.value;
+    }
+    /** Getter for displacement amount */
+
+
+    get displacement() {
+      return this.material.uniforms.displacement.value;
+    }
+    /** Getter for texture */
+
+
+    get texture() {
+      return this.material.uniforms.colorTexture.value;
+    }
+    /** Getter for the depth texture */
+
+
+    get depth() {
+      return this.material.uniforms.opacity.value;
     }
 
   }

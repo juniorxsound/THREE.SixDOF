@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>6DOF Viewer Example</title>
+    <title>THREE.6DOF - Image Viewer Example</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
@@ -18,6 +18,10 @@
         a {
             color: skyblue;
             text-decoration: none
+        }
+
+        video {
+            display: none;
         }
 
         #info {
@@ -37,12 +41,15 @@
     <link rel="icon" type="image/png" sizes="16x16" href="public/images/favicon-16x16.png">
     <link rel="manifest" href="public/site.webmanifest">
 
-    <!-- Scripts -->
+    <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/109/three.min.js"
         integrity="sha256-Wua0LsQkGDEeIkbmBNjj9wcThJh5uCD6R8+5YQhXveQ=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"
         integrity="sha256-HJ7j+71YYw6Kcs8THwQV9lXmPOcR0eXlg7n8KRTZsyA=" crossorigin="anonymous"></script>
     <script src="./public/js/WebVR.js"></script>
+    <script src="./public/js/GUIHelper.js"></script>
+
+    <!-- THREE-6DOF -->
     <script src="../dist/three-6dof.js"></script>
 </head>
 
@@ -50,23 +57,25 @@
 
     <div id="info">
         <span id="info_wrapper">
-            <a href="https://github.com/juniorxsound/THREE.SixDOF" target="_blank" rel="noopener">THREE.SixDOF</a> -
-            Viewer Example<br /> Written
-            by <a href="https://orfleisher.com">juniorxsound</a> and <a
-                href="https://github.com/mellinger">mellinger</a>
+            <a href="https://github.com/juniorxsound/THREE.SixDOF" target="_blank" rel="noopener">THREE.6DOF</a> -
+            Image Viewer Example<br /> Written
+            by <a href="https://orfleisher.com">@juniorxsound</a> and <a
+                href="https://github.com/mellinger">@mellinger</a> <br /><br />
         </span>
     </div>
+
+    <!-- Video Element for video example -->
+    <video src="https://storage.cloud.google.com/orfleisher-production.appspot.com/videos/dutch.mp4" id="six_dof_demo" muted playsinline loop />
+
     <script>
         'use strict';
-        /** Debug GUI Props **/
-        var guiParams = {
-            style: SixDOF.Style.MESH,
-            displacement: 4.0,
-            debugDepth: false,
-            toggleView: () => { },
-            autoRotate: true
-        };
+        // debug GUI
+        var debugGUI;
 
+        // We will create the viewer once the textures are loaded
+        var sixDofViewer;
+
+        // Create the scene, renderer and camera
         var scene = new THREE.Scene();
 
         var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -76,7 +85,7 @@
         document.body.appendChild(THREE.WEBVR.createButton(renderer));
 
         var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1000);
-        var cameraDolly = new THREE.Object3D();
+        var cameraDolly = new THREE.Object3D(); // We use a camera dolly since WebVR/XR will override camera transform
         cameraDolly.position.y = -1.6;
         cameraDolly.add(camera);
         scene.add(cameraDolly);
@@ -91,8 +100,15 @@
 
         // On finish loading create the viewer with the textures
         loadingManager.onLoad = () => {
-            var viewer = new SixDOF.Viewer(colorTexture, depthTexture);
-            scene.add(viewer);
+            sixDofViewer = new SixDOF.Viewer(colorTexture, depthTexture);
+            scene.add(sixDofViewer);
+
+            // Create the debug GUI
+            debugGUI = THREE.GUI.create(sixDofViewer, scene);
+            debugGUI.add({ 'showVideo': () => { } }, 'showVideo')
+                .name('Video Example')
+                .onChange(() => {
+                });
         }
 
         renderer.setAnimationLoop(() => {
@@ -104,52 +120,6 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        var gui = new dat.GUI();
-
-        /** Rendering style **/
-        gui
-            .add(guiParams, 'style', {
-                Mesh: SixDOF.Style.MESH,
-                Wireframe: SixDOF.Style.WIRE,
-                Pointcloud: SixDOF.Style.POINTS
-            })
-            .name('Style')
-            .onChange(val => {
-                viewer.setStyleFromString(SixDOF.Style[val]);
-            });
-        /** Displacement amount **/
-        gui
-            .add(guiParams, 'displacement', 0.0, 10.0)
-            .name('Displacement')
-            .onChange(val => {
-                viewer.setDisplacement(val);
-            });
-
-        /** Show depth map in viewer **/
-        gui
-            .add(guiParams, 'debugDepth')
-            .name('Debug Depth')
-            .onChange(val => {
-                viewer.toggleDepthDebug(val);
-            });
-
-        /** Spin viewer **/
-        gui
-            .add(guiParams, 'autoRotate')
-            .name('Auto Rotate');
-
-        /** Move camera between FPS and outside view **/
-        gui
-            .add(guiParams, 'toggleView')
-            .name('Toggle View')
-            .onChange(() => {
-                if (cameraDolly.position.z === 0) {
-                    cameraDolly.position.set(0, 0, 20);
-                } else {
-                    cameraDolly.position.set(0, 0, 0);
-                }
-            });
     </script>
 </body>
 
