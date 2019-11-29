@@ -42,7 +42,7 @@ import {
     TextureType,
     MeshDensity, 
     Style
-} from 'juniorxsound/THREE.SixDOF'
+} from 'three-6dof'
 ```
 
 ### Examples
