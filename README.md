@@ -30,13 +30,9 @@ loadingManager.onLoad = () => {
 ```
 
 #### Using with ES6
-If you are using `yarn` or `npm` with ES6 you can also
+If you are using `yarn` with ES6 you can also
 ```sh
-yarn add juniorxsound/THREE.SixDOF
-```
-or
-```sh
-npm install --save juniorxsound/THREE.SixDOF
+yarn add https://github.com/juniorxsound/THREE.SixDOF
 ```
 
 You can import the plugin by simply
